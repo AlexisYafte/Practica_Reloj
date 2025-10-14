@@ -31,4 +31,11 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj {
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
         return sdf.format(new Date(millis));
     }
+
+     // 🔹 Implementación vacía (solo el servidor la usa realmente)
+    @Override
+    public void registrarCliente(Reloj cliente) throws RemoteException {
+        // Por defecto no hace nada — el servidor la sobrescribe
+        System.out.println("⚠️ Este nodo no puede registrar clientes (solo el servidor puede hacerlo).");
+    }
 }
