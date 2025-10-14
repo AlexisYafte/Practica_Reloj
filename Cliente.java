@@ -21,8 +21,8 @@ public class Cliente {
             // Registrar cliente en el servidor usando reflexión
             servidor.getClass().getMethod("registrarCliente", Reloj.class).invoke(servidor, relojLocal);
 
-            System.out.println("Cliente conectado al servidor.");
-            System.out.println("Hora local inicial: " + relojLocal.obtenerHoraFormato());
+            System.out.println("✅ Cliente conectado al servidor.");
+            System.out.println("⏰ Hora local inicial: " + relojLocal.obtenerHoraFormato());
 
             // Mantener vivo el cliente
             while (true) {
@@ -30,7 +30,7 @@ public class Cliente {
             }
 
         } catch (Exception e) {
-            System.err.println("Error en Cliente: " + e);
+            System.err.println("❌ Error en Cliente: " + e);
             e.printStackTrace();
         }
     }
