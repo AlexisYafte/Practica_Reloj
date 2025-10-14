@@ -48,11 +48,11 @@ public class Servidor extends RelojImpl {
         long promedio = suma / horas.size();
 
         System.out.println("------------------------------------");
-        System.out.println("🧮 Promedio (en segundos): " + promedio);
+        System.out.println("Promedio (en segundos): " + promedio);
         System.out.println("------------------------------------");
 
         // Enviar ajustes
-        System.out.println("\n⚙️ Tabla de ajustes:");
+        System.out.println("\nTabla de ajustes:");
         System.out.println("------------------------------------");
         System.out.printf("%-15s %-15s\n", "Nodo", "Ajuste (segundos)");
         System.out.println("------------------------------------");
@@ -65,7 +65,7 @@ public class Servidor extends RelojImpl {
         }
 
         System.out.println("------------------------------------");
-        System.out.println("✅ Sincronización completa.");
+        System.out.println("Sincronización completa.");
     }
 
     public static void main(String[] args) {

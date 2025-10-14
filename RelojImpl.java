@@ -22,7 +22,7 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj {
     @Override
     public void ajustarHora(long diferencia) throws RemoteException {
         horaLocal += diferencia;
-        System.out.println("⏰ Reloj ajustado por " + diferencia + " segundos. Nueva hora: " + obtenerHoraFormato());
+        System.out.println("Reloj ajustado por " + diferencia + " segundos. Nueva hora: " + obtenerHoraFormato());
     }
 
     @Override
@@ -36,6 +36,6 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj {
     @Override
     public void registrarCliente(Reloj cliente) throws RemoteException {
         // Por defecto no hace nada — el servidor la sobrescribe
-        System.out.println("⚠️ Este nodo no puede registrar clientes (solo el servidor puede hacerlo).");
+        System.out.println("Este nodo no puede registrar clientes (solo el servidor puede hacerlo).");
     }
 }
