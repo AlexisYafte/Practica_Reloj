@@ -26,6 +26,7 @@ public class Servidor extends RelojImpl {
 
         System.out.println("\n===== SINCRONIZACIÓN INICIADA =====");
 
+        //Se crea un mapa para almacenar las horas de los nodos (servidor + clientes)
         Map<Reloj, Long> horas = new LinkedHashMap<>();
         horas.put(this, this.horaLocal);
 
@@ -52,6 +53,7 @@ public class Servidor extends RelojImpl {
             suma += entry.getValue();
         }
 
+        // Calcular promedio donde suma es la suma de todos los tiempos (en segundos)
         long promedio = suma / horas.size();
         System.out.println("------------------------------------------------");
         System.out.println(" Promedio (segundos): " + promedio);
@@ -64,7 +66,7 @@ public class Servidor extends RelojImpl {
         System.out.println("------------------------------------");
 
         for (Map.Entry<Reloj, Long> entry : horas.entrySet()) {
-            long diferencia = promedio - entry.getValue();
+            long diferencia = promedio - entry.getValue(); //Luego se calcula para cada nodo, aqui se hace el ajuste para igualar todos los relojes con elx promedio.
             try {
                 entry.getKey().ajustarHora(diferencia);
                 String nombre = (entry.getKey() == this) ? "Servidor" : "Cliente";
@@ -78,7 +80,7 @@ public class Servidor extends RelojImpl {
         System.out.println(" Sincronización completa. Clientes activos: " + clientes.size());
     }
 
-    // 🔻 Notifica a todos los clientes que el servidor se apaga
+    // Notifica a todos los clientes que el servidor se apaga
     public void notificarApagadoATodos() {
         System.out.println("\n Notificando a los clientes sobre el apagado del servidor...");
         for (Reloj cliente : clientes) {
@@ -126,7 +128,7 @@ public class Servidor extends RelojImpl {
             Scanner sc = new Scanner(System.in);
 
             while (true) {
-                servidor.esperarClientes(60); // Espera 60s por clientes
+                servidor.esperarClientes(30); // Espera 60s por clientes
 
                 System.out.print("\nPresione ENTER para sincronizar o escriba 'salir' para apagar: ");
                 String input = sc.nextLine().trim().toLowerCase();

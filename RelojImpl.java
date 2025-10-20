@@ -19,16 +19,16 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj {
     }
 
     @Override
-    public void ajustarHora(long diferencia) throws RemoteException {
-        horaLocal += diferencia;
-        System.out.println("Reloj ajustado por " + diferencia + " segundos. Nueva hora: " + obtenerHoraFormato());
-    }
-
-    @Override
     public String obtenerHoraFormato() throws RemoteException {
         long millis = horaLocal * 1000;
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
         return sdf.format(new Date(millis));
+    }
+
+    @Override
+    public void ajustarHora(long diferencia) throws RemoteException {
+        horaLocal += diferencia;
+        System.out.println("Reloj ajustado por " + diferencia + " segundos. Nueva hora: " + obtenerHoraFormato());
     }
 
     @Override
