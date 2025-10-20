@@ -1,4 +1,3 @@
-
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
@@ -6,7 +5,7 @@ import java.util.Date;
 
 public class RelojImpl extends UnicastRemoteObject implements Reloj {
 
-    protected long horaLocal; // hora en segundos
+    protected long horaLocal; // hora simulada en segundos
 
     public RelojImpl(long offsetSegundos) throws RemoteException {
         super();
@@ -22,7 +21,7 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj {
     @Override
     public void ajustarHora(long diferencia) throws RemoteException {
         horaLocal += diferencia;
-        System.out.println("⏰ Reloj ajustado por " + diferencia + " segundos. Nueva hora: " + obtenerHoraFormato());
+        System.out.println("Reloj ajustado por " + diferencia + " segundos. Nueva hora: " + obtenerHoraFormato());
     }
 
     @Override
@@ -32,10 +31,14 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj {
         return sdf.format(new Date(millis));
     }
 
-     // 🔹 Implementación vacía (solo el servidor la usa realmente)
     @Override
     public void registrarCliente(Reloj cliente) throws RemoteException {
-        // Por defecto no hace nada — el servidor la sobrescribe
-        System.out.println("⚠️ Este nodo no puede registrar clientes (solo el servidor puede hacerlo).");
+        System.out.println("Este nodo no puede registrar clientes (solo el servidor puede hacerlo).");
+    }
+
+    @Override
+    public void notificarApagado() throws RemoteException {
+        System.out.println("\n Servidor desconectado. Este cliente dejará de sincronizar.\n");
+        System.exit(0);
     }
 }
