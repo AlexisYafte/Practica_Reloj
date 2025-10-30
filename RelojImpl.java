@@ -7,9 +7,9 @@ import java.util.concurrent.*;
 
 public class RelojImpl extends UnicastRemoteObject implements Reloj, Runnable {
 
-    protected volatile long horaLocal;    
+    protected volatile long horaLocal;
     private transient Thread ticker;
-    private transient Scanner sc;         
+    private transient Scanner sc;
     private transient boolean running = true;
 
     public RelojImpl(long offsetSegundos, Scanner sc) throws RemoteException {
@@ -21,7 +21,6 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj, Runnable {
 
     public RelojImpl(long offsetSegundos) throws RemoteException {
         super();
-        this.sc = null;
         this.horaLocal = (System.currentTimeMillis() / 1000) + offsetSegundos;
         startTicker();
     }
@@ -41,7 +40,7 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj, Runnable {
                 System.out.println("🕒 Reloj simulado: " + obtenerHoraFormato());
             }
         } catch (InterruptedException | RemoteException e) {
-            // Ignorar al detener
+            // Ignorar
         }
     }
 
@@ -58,8 +57,7 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj, Runnable {
 
     @Override
     public String obtenerHoraFormato() throws RemoteException {
-        long millis = horaLocal * 1000;
-        return new SimpleDateFormat("HH:mm:ss").format(new Date(millis));
+        return new SimpleDateFormat("HH:mm:ss").format(new Date(horaLocal * 1000));
     }
 
     @Override
@@ -76,13 +74,10 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj, Runnable {
 
     @Override
     public boolean seguirConectado() throws RemoteException {
-        if (sc == null) return false;
-        System.out.print("\n¿Desea seguir conectado al servidor? (s/n): ");
-        String r = sc.nextLine().trim().toLowerCase();
-        return r.equals("s");
+        return true; // ya no se pregunta al cliente si desea seguir conectado
     }
 
-    // ✅ con timeout (30 s)
+    // ✅ Aplica el desfase sobre la hora simulada actual (no la del sistema)
     @Override
     public void aplicarDesfaseManual() throws RemoteException {
         if (sc == null) return;
@@ -101,11 +96,11 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj, Runnable {
         });
 
         try {
-            long nuevoDesfase = future.get(30, TimeUnit.SECONDS); // ⏱ espera 30 s
-            horaLocal = (System.currentTimeMillis() / 1000) + nuevoDesfase;
+            long nuevoDesfase = future.get(30, TimeUnit.SECONDS);
+            horaLocal += nuevoDesfase; // ✅ ahora se aplica sobre el reloj actual
             System.out.println("🕐 Nuevo desfase aplicado. Hora local actualizada a: " + obtenerHoraFormato());
         } catch (TimeoutException e) {
-            System.out.println("\n⏳ Tiempo de espera agotado (30 s). Se mantiene el reloj actual.");
+            System.out.println("\n⏳ Tiempo agotado (30 s). Se mantiene el reloj actual.");
             future.cancel(true);
         } catch (Exception e) {
             System.out.println("⚠️ Error al aplicar desfase: " + e.getMessage());

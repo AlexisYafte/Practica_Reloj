@@ -6,9 +6,10 @@ import java.util.*;
 public class Servidor extends RelojImpl {
 
     private final List<Reloj> clientes = new ArrayList<>();
+    private int clientesPrevios = 0;
 
     public Servidor() throws RemoteException {
-        super(0L); // hora base
+        super(0L);
     }
 
     @Override
@@ -17,15 +18,28 @@ public class Servidor extends RelojImpl {
         System.out.println("✅ Cliente registrado. Total de clientes: " + clientes.size());
     }
 
-    public void sincronizar() throws RemoteException {
-        System.out.println("\n===== SINCRONIZACIÓN INICIADA =====");
+    private boolean hayNuevosClientes() {
+        if (clientes.size() > clientesPrevios) {
+            clientesPrevios = clientes.size();
+            return true;
+        }
+        return false;
+    }
 
+    public void sincronizar() throws RemoteException {
+        if (!hayNuevosClientes()) {
+            System.out.println("\n⚠️ No hay nuevos clientes. No se realizará sincronización.");
+            return;
+        }
+
+        System.out.println("\n===== SINCRONIZACIÓN INICIADA =====");
         Map<Reloj, Long> horas = new LinkedHashMap<>();
         horas.put(this, this.horaLocal);
 
         List<Reloj> desconectados = new ArrayList<>();
         for (Reloj c : clientes) {
             try {
+                c.aplicarDesfaseManual(); // preguntar desfase antes de obtener hora
                 long h = c.obtenerHora();
                 horas.put(c, h);
             } catch (Exception e) {
@@ -40,7 +54,6 @@ public class Servidor extends RelojImpl {
             return;
         }
 
-        // Tabla
         System.out.println("\n📋 Tabla de horas actuales:");
         System.out.println("------------------------------------");
         System.out.printf("%-15s %-15s %-15s\n", "Nodo", "Hora", "Segundos");
@@ -59,7 +72,6 @@ public class Servidor extends RelojImpl {
         System.out.println("🧮 Promedio (s): " + promedio);
         System.out.println("------------------------------------");
 
-        // Ajustes
         System.out.println("\n⚙️ Tabla de ajustes:");
         System.out.println("------------------------------------");
         System.out.printf("%-15s %-15s\n", "Nodo", "Ajuste (s)");
@@ -72,28 +84,13 @@ public class Servidor extends RelojImpl {
                 String nombre = (e.getKey() == this) ? "Servidor" : "Cliente";
                 System.out.printf("%-15s %+15d\n", nombre, diff);
             } catch (Exception ex) {
-                System.out.println("Error ajustando cliente -> se elimina.");
+                System.out.println("Cliente inactivo -> se eliminará.");
                 clientes.remove(e.getKey());
             }
         }
 
         System.out.println("------------------------------------");
         System.out.println("✅ Sincronización completa. Clientes activos: " + clientes.size());
-
-        // Preguntar si seguir conectados + aplicar nuevo desfase
-        List<Reloj> desconectan = new ArrayList<>();
-        for (Reloj c : new ArrayList<>(clientes)) {
-            try {
-                boolean seguir = c.seguirConectado();
-                if (!seguir) desconectan.add(c);
-                else c.aplicarDesfaseManual(); // bloquea máx. 30s por cliente
-            } catch (Exception ex) {
-                System.out.println("Cliente inactivo -> se eliminará.");
-                desconectan.add(c);
-            }
-        }
-        clientes.removeAll(desconectan);
-        System.out.println("Estado final: clientes activos = " + clientes.size());
     }
 
     public void notificarApagadoATodos() {
