@@ -39,8 +39,13 @@ public class Servidor extends RelojImpl {
         List<Reloj> desconectados = new ArrayList<>();
         for (Reloj c : clientes) {
             try {
-                long h = c.obtenerHora(); // ✅ Tomar hora simulada actual
-                horas.put(c, h);
+                // 🕑 Calcular RTT
+                long t0 = System.currentTimeMillis();
+                long horaCliente = c.obtenerHora();
+                long t1 = System.currentTimeMillis();
+                long rtt_ms = t1 - t0;
+                long horaAjustada = horaCliente + rtt_ms / 2000; // RTT/2 en segundos
+                horas.put(c, horaAjustada);
             } catch (Exception e) {
                 System.out.println("⚠️ Cliente no responde -> se eliminará.");
                 desconectados.add(c);
@@ -53,23 +58,29 @@ public class Servidor extends RelojImpl {
             return;
         }
 
-        System.out.println("\n📋 Tabla de horas actuales:");
-        System.out.println("------------------------------------");
-        System.out.printf("%-15s %-15s %-15s\n", "Nodo", "Hora", "Segundos");
-        System.out.println("------------------------------------");
+        // 📊 Mostrar tabla UTC y segundos del día
+        System.out.println("\n📋 Tabla de horas actuales (UTC):");
+        System.out.println("--------------------------------------------------------------------------");
+        System.out.printf("%-15s %-15s %-15s %-15s\n", "Nodo", "Hora UTC", "Epoch (s)", "Seg. del día");
+        System.out.println("--------------------------------------------------------------------------");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         long suma = 0; int i = 0;
         for (Map.Entry<Reloj, Long> e : horas.entrySet()) {
             String nombre = (e.getKey() == this) ? "Servidor" : "Cliente " + (++i);
-            String horaFmt = new SimpleDateFormat("HH:mm:ss").format(new Date(e.getValue() * 1000));
-            System.out.printf("%-15s %-15s %-15d\n", nombre, horaFmt, e.getValue());
-            suma += e.getValue();
+            long epoch = e.getValue();
+            String horaFmt = sdf.format(new Date(epoch * 1000));
+            int segundosDia = (int) ((epoch % 86400 + 86400) % 86400);
+            System.out.printf("%-15s %-15s %-15d %-15d\n", nombre, horaFmt, epoch, segundosDia);
+            suma += epoch;
         }
 
         long promedio = suma / horas.size();
-        System.out.println("------------------------------------");
+        System.out.println("--------------------------------------------------------------------------");
         System.out.println("🧮 Promedio (s): " + promedio);
-        System.out.println("------------------------------------");
+        System.out.println("--------------------------------------------------------------------------");
 
         System.out.println("\n⚙️ Tabla de ajustes:");
         System.out.println("------------------------------------");
@@ -83,7 +94,7 @@ public class Servidor extends RelojImpl {
                 String nombre = (e.getKey() == this) ? "Servidor" : "Cliente";
                 System.out.printf("%-15s %+15d\n", nombre, diff);
             } catch (Exception ex) {
-                System.out.println("Cliente inactivo -> se elimina.");
+                System.out.println("Cliente inactivo -> se eliminará.");
                 clientes.remove(e.getKey());
             }
         }

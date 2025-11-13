@@ -11,7 +11,6 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj, Runnable {
 
     public RelojImpl(long offsetSegundos) throws RemoteException {
         super();
-        // Toma la hora actual del sistema + posible offset (aunque será 0)
         this.horaLocal = (System.currentTimeMillis() / 1000) + offsetSegundos;
         startTicker();
     }
@@ -31,7 +30,7 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj, Runnable {
                 System.out.println("🕒 Reloj simulado: " + obtenerHoraFormato());
             }
         } catch (InterruptedException | RemoteException e) {
-            // Ignorar al detener
+            // Ignorar
         }
     }
 
@@ -61,6 +60,11 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj, Runnable {
         System.out.println("\n🛑 Servidor desconectado. Este cliente dejará de sincronizar.\n");
         running = false;
         System.exit(0);
+    }
+
+    @Override
+    public boolean seguirConectado() throws RemoteException {
+        return true;
     }
 
     public void stopTicker() {
