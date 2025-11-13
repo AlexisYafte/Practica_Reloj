@@ -39,8 +39,7 @@ public class Servidor extends RelojImpl {
         List<Reloj> desconectados = new ArrayList<>();
         for (Reloj c : clientes) {
             try {
-                c.aplicarDesfaseManual(); // preguntar desfase antes de obtener hora
-                long h = c.obtenerHora();
+                long h = c.obtenerHora(); // ✅ Tomar hora simulada actual
                 horas.put(c, h);
             } catch (Exception e) {
                 System.out.println("⚠️ Cliente no responde -> se eliminará.");
@@ -84,7 +83,7 @@ public class Servidor extends RelojImpl {
                 String nombre = (e.getKey() == this) ? "Servidor" : "Cliente";
                 System.out.printf("%-15s %+15d\n", nombre, diff);
             } catch (Exception ex) {
-                System.out.println("Cliente inactivo -> se eliminará.");
+                System.out.println("Cliente inactivo -> se elimina.");
                 clientes.remove(e.getKey());
             }
         }

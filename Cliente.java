@@ -1,15 +1,13 @@
 import java.rmi.registry.*;
-import java.util.Scanner;
 
 public class Cliente {
     public static void main(String[] args) {
         try {
-            Scanner sc = new Scanner(System.in);
             System.out.print("Ingrese la IP del servidor RMI: ");
+            java.util.Scanner sc = new java.util.Scanner(System.in);
             String ip = sc.nextLine().trim();
 
-            // ⏱ sin desfase inicial — solo la hora real actual
-            RelojImpl reloj = new RelojImpl(0, sc);
+            RelojImpl reloj = new RelojImpl(0); // sin desfase inicial, toma hora actual
 
             Registry registry = LocateRegistry.getRegistry(ip, 1099);
             Reloj servidor = (Reloj) registry.lookup("RelojServidor");
@@ -18,7 +16,7 @@ public class Cliente {
             System.out.println("✅ Cliente conectado al servidor.");
             System.out.println("⏰ Hora local inicial: " + reloj.obtenerHoraFormato());
 
-            // Mantener vivo
+            // Mantener el cliente vivo
             while (true) Thread.sleep(5000);
 
         } catch (Exception e) {

@@ -7,6 +7,5 @@ public interface Reloj extends Remote {
     String obtenerHoraFormato() throws RemoteException;  
     void registrarCliente(Reloj cliente) throws RemoteException;
     void notificarApagado() throws RemoteException;
-    boolean seguirConectado() throws RemoteException;
-    void aplicarDesfaseManual() throws RemoteException;
 }
+
