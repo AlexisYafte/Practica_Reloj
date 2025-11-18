@@ -9,7 +9,7 @@ public class Servidor extends RelojImpl {
     private int clientesPrevios = 0;
 
     public Servidor() throws RemoteException {
-        super(0L);
+        super(0L); // reloj del servidor sin offset
     }
 
     @Override
@@ -28,7 +28,7 @@ public class Servidor extends RelojImpl {
 
     public void sincronizar() throws RemoteException {
         if (!hayNuevosClientes()) {
-            System.out.println("\n⚠️ No hay nuevos clientes. No se sincroniza.");
+            System.out.println("\n⚠️ No hay nuevos clientes conectados. No se sincroniza.");
             return;
         }
 
@@ -37,47 +37,63 @@ public class Servidor extends RelojImpl {
         Map<Reloj, Long> horas = new LinkedHashMap<>();
         horas.put(this, this.horaLocal);
 
-        List<Reloj> muertos = new ArrayList<>();
+        List<Reloj> remover = new ArrayList<>();
         for (Reloj c : clientes) {
             try {
-                long h = c.obtenerHora(); // ← SOLO LA HORA ACTUAL
+                long h = c.obtenerHora();
                 horas.put(c, h);
             } catch (Exception e) {
-                muertos.add(c);
+                System.out.println("⚠️ Cliente desconectado. Eliminando...");
+                remover.add(c);
             }
         }
+        clientes.removeAll(remover);
 
-        clientes.removeAll(muertos);
         if (horas.size() <= 1) {
             System.out.println("❌ No hay clientes activos.");
             return;
         }
 
-        // TABLA DE HORAS
         System.out.println("\n📋 Tabla de horas:");
-        long suma = 0;
-        int i = 0;
-        for (var e : horas.entrySet()) {
-            String nombre = (e.getKey() == this) ? "Servidor" : "Cliente " + (++i);
-            String horaFmt = new SimpleDateFormat("HH:mm:ss").format(new Date(e.getValue() * 1000));
-            System.out.printf("%-15s %-15s %-15d\n", nombre, horaFmt, e.getValue());
+        System.out.println("------------------------------------");
+        System.out.printf("%-15s %-15s %-15s\n",
+                "Nodo", "Hora", "Segundos");
+        System.out.println("------------------------------------");
+
+        long suma = 0; int idx = 0;
+        for (Map.Entry<Reloj, Long> e : horas.entrySet()) {
+            String n = (e.getKey() == this) ? "Servidor" : "Cliente " + (++idx);
+            String hf = new SimpleDateFormat("HH:mm:ss")
+                    .format(new Date(e.getValue() * 1000));
+            System.out.printf("%-15s %-15s %-15d\n", n, hf, e.getValue());
             suma += e.getValue();
         }
 
         long promedio = suma / horas.size();
+        System.out.println("------------------------------------");
         System.out.println("🧮 Promedio: " + promedio);
+        System.out.println("------------------------------------");
 
-        // AJUSTES
-        i = 0;
-        for (var e : horas.entrySet()) {
+        System.out.println("\n⚙️ Ajustes:");
+        System.out.println("------------------------------------");
+
+        for (Map.Entry<Reloj, Long> e : horas.entrySet()) {
             long diff = promedio - e.getValue();
-            e.getKey().ajustarHora(diff);
+            try {
+                e.getKey().ajustarHora(diff);
+                String n = (e.getKey() == this) ? "Servidor" : "Cliente";
+                System.out.printf("%-15s %+15d\n", n, diff);
+            } catch (Exception ex) {
+                clientes.remove(e.getKey());
+            }
         }
 
+        System.out.println("------------------------------------");
         System.out.println("✅ Sincronización completa.");
     }
 
     public void notificarApagadoATodos() {
+        System.out.println("\nNotificando cierre...");
         for (Reloj c : clientes) {
             try { c.notificarApagado(); } catch (Exception ignored) {}
         }
@@ -88,24 +104,23 @@ public class Servidor extends RelojImpl {
         try {
             try {
                 LocateRegistry.createRegistry(1099);
-            } catch (Exception ignore) {}
+            } catch (Exception ignored) {}
 
             Servidor s = new Servidor();
             Naming.rebind("RelojServidor", s);
+            System.out.println("🕒 Servidor listo...");
 
             Scanner sc = new Scanner(System.in);
             while (true) {
-                System.out.print("\nENTER = sincronizar | salir = apagar: ");
-                String in = sc.nextLine();
-                if (in.equalsIgnoreCase("salir")) {
+                System.out.print("\nENTER para sincronizar o 'salir': ");
+                String in = sc.nextLine().trim().toLowerCase();
+                if (in.equals("salir")) {
                     s.notificarApagadoATodos();
                     System.exit(0);
                 }
                 s.sincronizar();
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 }
