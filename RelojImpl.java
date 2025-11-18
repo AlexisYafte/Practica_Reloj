@@ -2,6 +2,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Scanner;
 
 public class RelojImpl extends UnicastRemoteObject implements Reloj, Runnable {
 
@@ -9,9 +10,15 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj, Runnable {
     private transient Thread ticker;
     private transient boolean running = true;
 
+    public RelojImpl(long offsetSegundos, Scanner sc) throws RemoteException {
+        super();
+        this.horaLocal = (System.currentTimeMillis() / 1000); // HORA REAL DEL DISPOSITIVO
+        startTicker();
+    }
+
     public RelojImpl(long offsetSegundos) throws RemoteException {
         super();
-        this.horaLocal = (System.currentTimeMillis() / 1000) + offsetSegundos;
+        this.horaLocal = (System.currentTimeMillis() / 1000); // HORA REAL DEL DISPOSITIVO
         startTicker();
     }
 
@@ -25,13 +32,11 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj, Runnable {
     public void run() {
         try {
             while (running) {
-                Thread.sleep(1000);
-                horaLocal++;
-                System.out.println("🕒 Reloj simulado: " + obtenerHoraFormato());
+            Thread.sleep(1000);
+            horaLocal++;
+            System.out.println("🕒 Reloj simulado: " + obtenerHoraFormato());
             }
-        } catch (InterruptedException | RemoteException e) {
-            // Ignorar
-        }
+        } catch (Exception ignored) {}
     }
 
     @Override
@@ -51,24 +56,19 @@ public class RelojImpl extends UnicastRemoteObject implements Reloj, Runnable {
     }
 
     @Override
-    public void registrarCliente(Reloj cliente) throws RemoteException {
-        System.out.println("⚠️ Este nodo no puede registrar clientes (solo el servidor puede hacerlo).");
+    public void registrarCliente(Reloj c) throws RemoteException {
+        System.out.println("⚠️ Este nodo no es servidor.");
     }
 
     @Override
     public void notificarApagado() throws RemoteException {
-        System.out.println("\n🛑 Servidor desconectado. Este cliente dejará de sincronizar.\n");
+        System.out.println("\n🛑 Servidor desconectado.");
         running = false;
         System.exit(0);
     }
 
     @Override
-    public boolean seguirConectado() throws RemoteException {
-        return true;
-    }
-
-    public void stopTicker() {
-        running = false;
-        if (ticker != null) ticker.interrupt();
+    public boolean seguirConectado() {
+        return true; // cliente siempre sigue conectado
     }
 }

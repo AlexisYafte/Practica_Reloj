@@ -5,24 +5,21 @@ public class Cliente {
     public static void main(String[] args) {
         try {
             Scanner sc = new Scanner(System.in);
-            System.out.print("Ingrese la IP del servidor RMI: ");
+            System.out.print("IP del servidor RMI: ");
             String ip = sc.nextLine().trim();
 
-            // 🕒 sin desfase inicial
-            RelojImpl reloj = new RelojImpl(0);
+            RelojImpl reloj = new RelojImpl(0, sc);
 
             Registry registry = LocateRegistry.getRegistry(ip, 1099);
             Reloj servidor = (Reloj) registry.lookup("RelojServidor");
 
             servidor.registrarCliente(reloj);
-            System.out.println("✅ Cliente conectado al servidor.");
-            System.out.println("⏰ Hora local inicial: " + reloj.obtenerHoraFormato());
+            System.out.println("✅ Cliente conectado.");
+            System.out.println("⏰ Hora inicial: " + reloj.obtenerHoraFormato());
 
-            // Mantener el cliente activo
             while (true) Thread.sleep(5000);
 
         } catch (Exception e) {
-            System.err.println("❌ Error en Cliente: " + e);
             e.printStackTrace();
         }
     }
