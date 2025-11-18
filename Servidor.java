@@ -9,13 +9,13 @@ public class Servidor extends RelojImpl {
     private int clientesPrevios = 0;
 
     public Servidor() throws RemoteException {
-        super(0L); // reloj del servidor sin offset
+        super(0L);
     }
 
     @Override
     public void registrarCliente(Reloj cliente) throws RemoteException {
         clientes.add(cliente);
-        System.out.println("✅ Cliente registrado. Total: " + clientes.size());
+        System.out.println("✅ Cliente registrado. Total de clientes: " + clientes.size());
     }
 
     private boolean hayNuevosClientes() {
@@ -28,99 +28,105 @@ public class Servidor extends RelojImpl {
 
     public void sincronizar() throws RemoteException {
         if (!hayNuevosClientes()) {
-            System.out.println("\n⚠️ No hay nuevos clientes conectados. No se sincroniza.");
+            System.out.println("\n⚠️ No hay nuevos clientes. No se realizará sincronización.");
             return;
         }
 
         System.out.println("\n===== SINCRONIZACIÓN INICIADA =====");
-
         Map<Reloj, Long> horas = new LinkedHashMap<>();
         horas.put(this, this.horaLocal);
 
-        List<Reloj> remover = new ArrayList<>();
+        List<Reloj> desconectados = new ArrayList<>();
         for (Reloj c : clientes) {
             try {
+                c.aplicarDesfaseManual(); // preguntar desfase antes de obtener hora
                 long h = c.obtenerHora();
                 horas.put(c, h);
             } catch (Exception e) {
-                System.out.println("⚠️ Cliente desconectado. Eliminando...");
-                remover.add(c);
+                System.out.println("⚠️ Cliente no responde -> se eliminará.");
+                desconectados.add(c);
             }
         }
-        clientes.removeAll(remover);
 
+        clientes.removeAll(desconectados);
         if (horas.size() <= 1) {
-            System.out.println("❌ No hay clientes activos.");
+            System.out.println("❌ No hay clientes activos para sincronizar.");
             return;
         }
 
-        System.out.println("\n📋 Tabla de horas:");
+        System.out.println("\n📋 Tabla de horas actuales:");
         System.out.println("------------------------------------");
-        System.out.printf("%-15s %-15s %-15s\n",
-                "Nodo", "Hora", "Segundos");
+        System.out.printf("%-15s %-15s %-15s\n", "Nodo", "Hora", "Segundos");
         System.out.println("------------------------------------");
 
-        long suma = 0; int idx = 0;
+        long suma = 0; int i = 0;
         for (Map.Entry<Reloj, Long> e : horas.entrySet()) {
-            String n = (e.getKey() == this) ? "Servidor" : "Cliente " + (++idx);
-            String hf = new SimpleDateFormat("HH:mm:ss")
-                    .format(new Date(e.getValue() * 1000));
-            System.out.printf("%-15s %-15s %-15d\n", n, hf, e.getValue());
+            String nombre = (e.getKey() == this) ? "Servidor" : "Cliente " + (++i);
+            String horaFmt = new SimpleDateFormat("HH:mm:ss").format(new Date(e.getValue() * 1000));
+            System.out.printf("%-15s %-15s %-15d\n", nombre, horaFmt, e.getValue());
             suma += e.getValue();
         }
 
         long promedio = suma / horas.size();
         System.out.println("------------------------------------");
-        System.out.println("🧮 Promedio: " + promedio);
+        System.out.println("🧮 Promedio (s): " + promedio);
         System.out.println("------------------------------------");
 
-        System.out.println("\n⚙️ Ajustes:");
+        System.out.println("\n⚙️ Tabla de ajustes:");
+        System.out.println("------------------------------------");
+        System.out.printf("%-15s %-15s\n", "Nodo", "Ajuste (s)");
         System.out.println("------------------------------------");
 
         for (Map.Entry<Reloj, Long> e : horas.entrySet()) {
             long diff = promedio - e.getValue();
             try {
                 e.getKey().ajustarHora(diff);
-                String n = (e.getKey() == this) ? "Servidor" : "Cliente";
-                System.out.printf("%-15s %+15d\n", n, diff);
+                String nombre = (e.getKey() == this) ? "Servidor" : "Cliente";
+                System.out.printf("%-15s %+15d\n", nombre, diff);
             } catch (Exception ex) {
+                System.out.println("Cliente inactivo -> se eliminará.");
                 clientes.remove(e.getKey());
             }
         }
 
         System.out.println("------------------------------------");
-        System.out.println("✅ Sincronización completa.");
+        System.out.println("✅ Sincronización completa. Clientes activos: " + clientes.size());
     }
 
     public void notificarApagadoATodos() {
-        System.out.println("\nNotificando cierre...");
+        System.out.println("\nNotificando apagado a clientes...");
         for (Reloj c : clientes) {
             try { c.notificarApagado(); } catch (Exception ignored) {}
         }
-        System.out.println("Servidor apagado.");
+        System.out.println("Notificación enviada. Cerrando servidor...");
     }
 
     public static void main(String[] args) {
         try {
             try {
                 LocateRegistry.createRegistry(1099);
-            } catch (Exception ignored) {}
+                System.out.println("Registro RMI creado en puerto 1099");
+            } catch (RemoteException e) {
+                System.out.println("Registro RMI ya estaba activo.");
+            }
 
             Servidor s = new Servidor();
             Naming.rebind("RelojServidor", s);
-            System.out.println("🕒 Servidor listo...");
+            System.out.println("🕒 Servidor RMI listo y esperando clientes...");
 
             Scanner sc = new Scanner(System.in);
             while (true) {
-                System.out.print("\nENTER para sincronizar o 'salir': ");
-                String in = sc.nextLine().trim().toLowerCase();
-                if (in.equals("salir")) {
+                System.out.print("\nPresione ENTER para sincronizar o escriba 'salir' para apagar: ");
+                String input = sc.nextLine().trim().toLowerCase();
+                if (input.equals("salir")) {
                     s.notificarApagadoATodos();
                     System.exit(0);
                 }
                 s.sincronizar();
             }
 
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
